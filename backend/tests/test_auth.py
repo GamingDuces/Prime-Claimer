@@ -28,3 +28,8 @@ def test_register_and_login(tmp_path):
     assert token_resp.status_code == 200
     data = token_resp.json()
     assert data.get('access_token')
+
+    # Complete tutorial using the obtained token
+    headers = {'Authorization': f'Bearer {data["access_token"]}'}
+    resp = client.post('/me/tutorial-complete', headers=headers)
+    assert resp.status_code == 200

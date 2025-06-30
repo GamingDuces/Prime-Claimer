@@ -239,6 +239,16 @@ def change_password(new_password: str, user=Depends(get_current_user)):
     conn.close()
     return {"msg": "Password updated"}
 
+# Mark tutorial as completed for the current user
+@app.post("/me/tutorial-complete")
+def tutorial_complete(user=Depends(get_current_user)):
+    conn = db_conn()
+    c = conn.cursor()
+    c.execute("UPDATE users SET first_login=0 WHERE id=?", (user["id"],))
+    conn.commit()
+    conn.close()
+    return {"msg": "Tutorial completed"}
+
 # --- ADMIN ---
 @app.post("/admin/new-user")
 def admin_create_user(u: UserCreate, user=Depends(get_admin_user)):

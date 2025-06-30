@@ -6,11 +6,13 @@ function Login({ onLogin }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      setLoading(true);
       const params = new URLSearchParams({ username, password });
       const { data } = await api.post('/token', params);
       setToken(data.access_token);
@@ -18,7 +20,10 @@ function Login({ onLogin }) {
       onLogin(data.access_token, meRes.data);
       navigate('/');
     } catch (err) {
-      setError('Login failed');
+      const detail = err?.response?.data?.detail;
+      setError(detail ? `Login failed: ${detail}` : 'Login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,7 +44,9 @@ function Login({ onLogin }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button type="submit">Login</button>
+        <button type="submit" disabled={loading}>
+          {loading ? 'Logging in...' : 'Login'}
+        </button>
       </form>
     </div>
   );
