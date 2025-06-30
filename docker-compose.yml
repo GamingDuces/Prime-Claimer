@@ -1,0 +1,26 @@
+version: '3.9'
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - ./backend/.env
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      - PORT=8000
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    environment:
+      - PORT=5173
+    depends_on:
+      - backend
+
+  discord-bot:
+    build: ./discord-bot
+    env_file:
+      - ./discord-bot/.env
+    depends_on:
+      - backend

@@ -1,0 +1,75 @@
+{
+  "author": "N30Z/ChatGPT",
+  "name": "Prime Claimer Backend",
+  "description": "FastAPI Backend für Prime Claimer. Multicore, Playwright, REST-API, Pterodactyl-ready.",
+  "image": "python:3.11-slim",
+  "startup": "gunicorn -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:${PORT} --workers 4",
+  "data": {
+    "docker_images": {
+      "python:3.11-slim": "python:3.11-slim"
+    }
+  },
+  "environment": [
+    {
+      "name": "PORT",
+      "description": "Port für FastAPI Backend",
+      "default": "8000"
+    },
+    {
+      "name": "SECRET_KEY",
+      "description": "Secret Key für JWT",
+      "default": "changeme123"
+    },
+    {
+      "name": "JWT_ALGORITHM",
+      "description": "JWT Algorithmus",
+      "default": "HS256"
+    }
+  ],
+  "feature_limits": {
+    "databases": 1,
+    "allocations": 1,
+    "backups": 3
+  },
+  "scripts": {
+    "installation": {
+      "script": [
+        "apt update",
+        "apt install -y wget gnupg curl",
+        "pip install --upgrade pip",
+        "pip install -r requirements.txt",
+        "python -m playwright install --with-deps"
+      ],
+      "container": "python:3.11-slim"
+    }
+  },
+  "variables": [
+    {
+      "name": "PORT",
+      "description": "Server Port",
+      "env_variable": "PORT",
+      "default_value": "8000",
+      "user_viewable": true,
+      "user_editable": true,
+      "required": true
+    },
+    {
+      "name": "SECRET_KEY",
+      "description": "FastAPI Secret Key",
+      "env_variable": "SECRET_KEY",
+      "default_value": "changeme123",
+      "user_viewable": true,
+      "user_editable": true,
+      "required": true
+    },
+    {
+      "name": "JWT_ALGORITHM",
+      "description": "JWT Algorithm",
+      "env_variable": "JWT_ALGORITHM",
+      "default_value": "HS256",
+      "user_viewable": true,
+      "user_editable": false,
+      "required": true
+    }
+  ]
+}

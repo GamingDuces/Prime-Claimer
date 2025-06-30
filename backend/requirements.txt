@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-jose[cryptography]
+pydantic
+passlib[bcrypt]
+playwright
+sqlite-utils
+python-dotenv
