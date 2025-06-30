@@ -6,3 +6,4 @@ passlib[bcrypt]
 playwright
 sqlite-utils
 python-dotenv
+httpx==0.24.1
