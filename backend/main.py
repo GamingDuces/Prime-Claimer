@@ -4,7 +4,7 @@ import json
 import secrets
 from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException, Depends, status, BackgroundTasks
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from passlib.context import CryptContext
 from jose import JWTError, jwt
@@ -104,6 +104,15 @@ class UserCreate(BaseModel):
     password: str
     email: Optional[str] = None
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: User
+
 class Game(BaseModel):
     id: int
     title: str
@@ -197,13 +206,21 @@ def register(user: UserCreate):
         email=row["email"], discord=row["discord"], first_login=bool(row["first_login"])
     )
 
-@app.post("/token", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(form_data.username, form_data.password)
+@app.post("/token", response_model=LoginResponse)
+def login(data: LoginRequest):
+    user = authenticate_user(data.username, data.password)
     if not user:
         raise HTTPException(status_code=401, detail="Incorrect username or password")
     token = create_access_token({"sub": user["username"]})
-    return {"access_token": token, "token_type": "bearer"}
+    user_obj = {
+        "id": user["id"],
+        "username": user["username"],
+        "is_admin": bool(user["is_admin"]),
+        "email": user["email"],
+        "discord": user["discord"],
+        "first_login": bool(user["first_login"])
+    }
+    return {"access_token": token, "token_type": "bearer", "user": user_obj}
 
 @app.get("/me", response_model=User)
 def get_me(user=Depends(get_current_user)):
