@@ -247,7 +247,14 @@ def change_password(new_password: str, user=Depends(get_current_user)):
 def update_me(update: UserUpdate, user=Depends(get_current_user)):
     conn = db_conn()
     c = conn.cursor()
-    c.execute("UPDATE users SET email=?, discord=? WHERE id=?", (update.email, update.discord, user["id"]))
+    c.execute("SELECT email, discord FROM users WHERE id=?", (user["id"],))
+    current = c.fetchone()
+    email = update.email if update.email is not None else current["email"]
+    discord = update.discord if update.discord is not None else current["discord"]
+    c.execute(
+        "UPDATE users SET email=?, discord=? WHERE id=?",
+        (email, discord, user["id"])
+    )
     conn.commit()
     c.execute("SELECT * FROM users WHERE id=?", (user["id"],))
     row = c.fetchone()
