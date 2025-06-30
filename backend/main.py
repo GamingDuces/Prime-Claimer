@@ -4,7 +4,7 @@ import json
 import secrets
 from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException, Depends, status, BackgroundTasks
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from passlib.context import CryptContext
 from jose import JWTError, jwt
@@ -104,6 +104,19 @@ class UserCreate(BaseModel):
     password: str
     email: Optional[str] = None
 
+class UserUpdate(BaseModel):
+    email: Optional[str] = None
+    discord: Optional[str] = None
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: User
+
 class Game(BaseModel):
     id: int
     title: str
@@ -197,13 +210,21 @@ def register(user: UserCreate):
         email=row["email"], discord=row["discord"], first_login=bool(row["first_login"])
     )
 
-@app.post("/token", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(form_data.username, form_data.password)
+@app.post("/token", response_model=LoginResponse)
+def login(data: LoginRequest):
+    user = authenticate_user(data.username, data.password)
     if not user:
         raise HTTPException(status_code=401, detail="Incorrect username or password")
     token = create_access_token({"sub": user["username"]})
-    return {"access_token": token, "token_type": "bearer"}
+    user_obj = {
+        "id": user["id"],
+        "username": user["username"],
+        "is_admin": bool(user["is_admin"]),
+        "email": user["email"],
+        "discord": user["discord"],
+        "first_login": bool(user["first_login"])
+    }
+    return {"access_token": token, "token_type": "bearer", "user": user_obj}
 
 @app.get("/me", response_model=User)
 def get_me(user=Depends(get_current_user)):
@@ -221,6 +242,20 @@ def change_password(new_password: str, user=Depends(get_current_user)):
     conn.commit()
     conn.close()
     return {"msg": "Password updated"}
+
+@app.put("/me", response_model=User)
+def update_me(update: UserUpdate, user=Depends(get_current_user)):
+    conn = db_conn()
+    c = conn.cursor()
+    c.execute("UPDATE users SET email=?, discord=? WHERE id=?", (update.email, update.discord, user["id"]))
+    conn.commit()
+    c.execute("SELECT * FROM users WHERE id=?", (user["id"],))
+    row = c.fetchone()
+    conn.close()
+    return User(
+        id=row["id"], username=row["username"], is_admin=bool(row["is_admin"]),
+        email=row["email"], discord=row["discord"], first_login=bool(row["first_login"])
+    )
 
 # --- ADMIN ---
 @app.post("/admin/new-user")
