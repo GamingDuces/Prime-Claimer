@@ -239,6 +239,16 @@ def change_password(new_password: str, user=Depends(get_current_user)):
     conn.close()
     return {"msg": "Password updated"}
 
+# Mark tutorial as completed for the current user
+@app.post("/me/tutorial-complete")
+def tutorial_complete(user=Depends(get_current_user)):
+    conn = db_conn()
+    c = conn.cursor()
+    c.execute("UPDATE users SET first_login=0 WHERE id=?", (user["id"],))
+    conn.commit()
+    conn.close()
+    return {"msg": "Tutorial completed"}
+
 # --- ADMIN ---
 @app.post("/admin/new-user")
 def admin_create_user(u: UserCreate, user=Depends(get_admin_user)):
@@ -265,6 +275,74 @@ def amazon_login(user=Depends(get_current_user)):
     conn.commit()
     conn.close()
     return {"msg": "Amazon session gespeichert"}
+
+# Generic helper to store a session for a given platform
+def _save_session(user_id: int, platform: str, data: dict):
+    conn = db_conn()
+    c = conn.cursor()
+    c.execute(
+        "INSERT OR REPLACE INTO sessions (user_id, platform, session_data, last_active) "
+        "VALUES (?, ?, ?, ?)",
+        (user_id, platform, json.dumps(data), datetime.utcnow()),
+    )
+    conn.commit()
+    conn.close()
+
+# --- EPIC GAMES SESSION (Dummy) ---
+
+@app.post("/accounts/epic/login")
+def epic_login(user=Depends(get_current_user)):
+    session = {"logged_in": True, "session_cookies": "DUMMY"}
+    _save_session(user["id"], "epic", session)
+    return {"msg": "Epic session gespeichert"}
+
+@app.get("/accounts/epic/status")
+def epic_status(user=Depends(get_current_user)):
+    conn = db_conn()
+    c = conn.cursor()
+    c.execute("SELECT * FROM sessions WHERE user_id=? AND platform='epic'", (user["id"],))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return {"logged_in": False}
+    return json.loads(row["session_data"])
+
+@app.delete("/accounts/epic/logout")
+def epic_logout(user=Depends(get_current_user)):
+    conn = db_conn()
+    c = conn.cursor()
+    c.execute("DELETE FROM sessions WHERE user_id=? AND platform='epic'", (user["id"],))
+    conn.commit()
+    conn.close()
+    return {"msg": "Epic session gelöscht"}
+
+# --- GOG.COM SESSION (Dummy) ---
+
+@app.post("/accounts/gog/login")
+def gog_login(user=Depends(get_current_user)):
+    session = {"logged_in": True, "session_cookies": "DUMMY"}
+    _save_session(user["id"], "gog", session)
+    return {"msg": "GOG session gespeichert"}
+
+@app.get("/accounts/gog/status")
+def gog_status(user=Depends(get_current_user)):
+    conn = db_conn()
+    c = conn.cursor()
+    c.execute("SELECT * FROM sessions WHERE user_id=? AND platform='gog'", (user["id"],))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return {"logged_in": False}
+    return json.loads(row["session_data"])
+
+@app.delete("/accounts/gog/logout")
+def gog_logout(user=Depends(get_current_user)):
+    conn = db_conn()
+    c = conn.cursor()
+    c.execute("DELETE FROM sessions WHERE user_id=? AND platform='gog'", (user["id"],))
+    conn.commit()
+    conn.close()
+    return {"msg": "GOG session gelöscht"}
 
 @app.get("/accounts/amazon/status")
 def amazon_status(user=Depends(get_current_user)):

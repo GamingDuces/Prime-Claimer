@@ -28,3 +28,26 @@ def test_register_and_login(tmp_path):
     assert token_resp.status_code == 200
     data = token_resp.json()
     assert data.get('access_token')
+
+    # Complete tutorial using the obtained token
+    headers = {'Authorization': f'Bearer {data["access_token"]}'}
+    resp = client.post('/me/tutorial-complete', headers=headers)
+    assert resp.status_code == 200
+
+    # Epic Games session handling
+    resp = client.post('/accounts/epic/login', headers=headers)
+    assert resp.status_code == 200
+    status_resp = client.get('/accounts/epic/status', headers=headers)
+    assert status_resp.status_code == 200
+    assert status_resp.json()['logged_in'] is True
+    resp = client.delete('/accounts/epic/logout', headers=headers)
+    assert resp.status_code == 200
+
+    # GOG.com session handling
+    resp = client.post('/accounts/gog/login', headers=headers)
+    assert resp.status_code == 200
+    status_resp = client.get('/accounts/gog/status', headers=headers)
+    assert status_resp.status_code == 200
+    assert status_resp.json()['logged_in'] is True
+    resp = client.delete('/accounts/gog/logout', headers=headers)
+    assert resp.status_code == 200
