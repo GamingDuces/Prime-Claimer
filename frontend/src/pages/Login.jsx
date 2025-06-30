@@ -11,9 +11,11 @@ function Login({ onLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await api.post('/token', { username, password });
+      const params = new URLSearchParams({ username, password });
+      const { data } = await api.post('/token', params);
       setToken(data.access_token);
-      onLogin(data.access_token, data.user);
+      const meRes = await api.get('/me');
+      onLogin(data.access_token, meRes.data);
       navigate('/');
     } catch (err) {
       setError('Login failed');
