@@ -18,3 +18,24 @@ docker-compose up
 ```
 
 The backend will be available on port `8000` and the frontend on `5173`. For more information about each component, check their individual READMEs.
+
+## Claim Script
+
+The repository now contains a helper script to automatically claim the currently
+free games from Prime Gaming. The script lives in
+`backend/claim_prime_gaming.py` and uses Playwright similar to the approach from
+[free-games-claimer](https://github.com/vogler/free-games-claimer).
+
+Set your Amazon credentials via environment variables before running:
+
+```bash
+export AMZ_EMAIL="you@example.com"
+export AMZ_PASSWORD="mypassword"
+export AMZ_OTPKEY="BASE32SECRET"  # optional
+python backend/claim_prime_gaming.py
+```
+
+The script logs in, claims available games and prints the titles of the claimed
+offers. Claimed titles are stored in `data/prime-gaming.json`. Set `AMZ_NOTIFY`
+to an [Apprise](https://github.com/caronc/apprise) URL to receive a notification
+after claiming.
